@@ -1,0 +1,1258 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>FRI 1.5 — Parameter Dependency Diagram</title>
+    <style>
+      :root {
+        --ink: #0d1b2a;
+        --ink-2: #37506b;
+        --mut: #7f95ad;
+        --paper: #f2efe9;
+        --panel: #fffdf9;
+        --rule: #d9d2c6;
+        --pos: #1f6f6b;
+        --neg: #b4442e;
+        --hot: #e0a500;
+        --p0: #2f6d80;
+        --p1: #7a5a9e;
+        --p2: #39795a;
+        --p3: #b06a2c;
+        --p4: #9c3f5d;
+        --p5: #3f5aa8;
+        --p6: #6b7a2f;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background:
+          radial-gradient(1100px 620px at 70% -8%, #fbf9f5 0%, transparent 62%),
+          var(--paper);
+        color: var(--ink);
+        font-family:
+          "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .wrap {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: 20px;
+        height: 100vh;
+        padding: 18px 20px;
+        transition: grid-template-columns 0.28s ease;
+      }
+      .wrap.collapsed {
+        grid-template-columns: 1fr 0;
+      }
+      .wrap.collapsed aside {
+        opacity: 0;
+        pointer-events: none;
+        transform: translateX(12px);
+      }
+      aside {
+        transition:
+          opacity 0.2s ease,
+          transform 0.28s ease;
+        overflow: hidden;
+      }
+      @media (max-width: 1050px) {
+        .wrap {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+        .wrap.collapsed {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      header {
+        margin-bottom: 10px;
+        position: relative;
+      }
+      .methodology {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 6;
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 12px;
+        letter-spacing: 0.03em;
+        text-decoration: none;
+        color: var(--ink-2);
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        padding: 6px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        line-height: 1;
+        box-shadow: 0 6px 16px -12px rgba(13, 27, 42, 0.5);
+        transition:
+          background 0.15s,
+          color 0.15s,
+          border-color 0.15s;
+      }
+      .methodology:hover {
+        background: var(--ink);
+        color: #f6f3ee;
+        border-color: var(--ink);
+      }
+      .methodology .doc {
+        font-size: 13px;
+      }
+      @media (max-width: 1050px) {
+        .methodology {
+          position: static;
+          display: inline-flex;
+          margin-bottom: 10px;
+        }
+      }
+      .titleblock {
+        text-align: center;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 40px;
+        margin: 0;
+        letter-spacing: -0.02em;
+        font-weight: 600;
+        font-variant-numeric: lining-nums;
+      }
+      h1 .v {
+        color: var(--mut);
+        font-style: italic;
+        font-weight: 400;
+      }
+      .lede {
+        margin: 8px auto 0;
+        max-width: 680px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--ink-2);
+      }
+
+      .stage {
+        position: relative;
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        overflow: hidden;
+        min-height: 600px;
+        flex: 1;
+        box-shadow:
+          0 1px 0 #fff inset,
+          0 10px 30px -22px rgba(13, 27, 42, 0.5);
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+
+      .panel-toggle {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 5;
+        font: inherit;
+        font-size: 12px;
+        background: rgba(255, 253, 249, 0.94);
+        backdrop-filter: blur(6px);
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        padding: 5px 11px;
+        cursor: pointer;
+        color: var(--ink-2);
+        box-shadow: 0 6px 16px -10px rgba(13, 27, 42, 0.5);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        line-height: 1;
+      }
+      .panel-toggle:hover {
+        background: #fff;
+        color: var(--ink);
+      }
+      .panel-toggle .chev {
+        font-size: 13px;
+        transition: transform 0.25s ease;
+      }
+      .wrap.collapsed .panel-toggle .chev {
+        transform: rotate(180deg);
+      }
+
+      .link {
+        stroke-linecap: round;
+      }
+      .node circle.hub {
+        cursor: grab;
+        transition: opacity 0.15s;
+      }
+      .node circle.hub:active {
+        cursor: grabbing;
+      }
+      .node text {
+        font-size: 14px;
+        fill: var(--ink);
+        pointer-events: none;
+        font-weight: 600;
+        font-family: "Iowan Old Style", Georgia, serif;
+        letter-spacing: 0.01em;
+        paint-order: stroke;
+        stroke: var(--panel);
+        stroke-width: 4px;
+        stroke-linejoin: round;
+      }
+      .locked-ring {
+        fill: none;
+        stroke: var(--hot);
+        stroke-width: 1.6;
+        opacity: 0.9;
+      }
+
+      aside {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-height: 0;
+      }
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--rule);
+        border-radius: 3px;
+        padding: 13px 14px;
+      }
+      .card h2 {
+        margin: 0 0 9px;
+        font-size: 11.5px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--mut);
+        font-family: ui-monospace, Menlo, monospace;
+        font-weight: 600;
+      }
+
+      .ctl {
+        margin-bottom: 13px;
+      }
+      .ctl:last-child {
+        margin-bottom: 0;
+      }
+      .ctl .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 5px;
+      }
+      .ctl label {
+        font-size: 14px;
+      }
+      .ctl .val {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 13px;
+        background: #eee9e0;
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+        padding: 1px 6px;
+      }
+      .hint {
+        font-size: 12px;
+        color: var(--mut);
+        margin-top: 5px;
+        line-height: 1.45;
+      }
+      input[type="range"] {
+        width: 100%;
+        -webkit-appearance: none;
+        background: transparent;
+        margin: 2px 0;
+      }
+      input[type="range"]::-webkit-slider-runnable-track {
+        height: 2px;
+        background: var(--rule);
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 15px;
+        height: 15px;
+        margin-top: -6.5px;
+        border-radius: 50%;
+        background: var(--ink);
+        border: 2px solid var(--panel);
+        box-shadow: 0 0 0 1px var(--ink);
+        cursor: grab;
+      }
+      input[type="range"]::-moz-range-track {
+        height: 2px;
+        background: var(--rule);
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: var(--ink);
+        border: 2px solid var(--panel);
+        cursor: grab;
+      }
+
+      .tree {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+      }
+      .prm {
+        break-inside: avoid;
+        border-top: 1px solid var(--rule);
+        padding: 6px 0 4px;
+      }
+      .prm:first-of-type {
+        border-top: none;
+      }
+      .prm > .nm {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13.5px;
+        font-weight: 600;
+        line-height: 1.3;
+        cursor: pointer;
+      }
+      .prm > .nm:hover {
+        color: var(--hot);
+      }
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        flex: none;
+      }
+      .ind {
+        margin: 3px 0 0 16px;
+        font-size: 11px;
+        color: var(--mut);
+        font-family: ui-monospace, Menlo, monospace;
+        line-height: 1.5;
+      }
+      .prm.on > .nm {
+        color: var(--hot);
+      }
+
+      #tip {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9;
+        background: #0d1b2a;
+        color: #f6f3ee;
+        padding: 9px 11px;
+        border-radius: 3px;
+        font-size: 13px;
+        max-width: 320px;
+        opacity: 0;
+        transition: opacity 0.1s;
+        line-height: 1.45;
+        box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.6);
+      }
+      #tip b {
+        color: #ffd76e;
+      }
+      #tip .k {
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 11.5px;
+        color: #9db4cc;
+      }
+
+      .rdout {
+        font-size: 13.5px;
+        line-height: 1.5;
+      }
+      .rdout .big {
+        font-size: 16px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 3px;
+      }
+      .rdout ol {
+        margin: 7px 0 0;
+        padding-left: 18px;
+        font-size: 12.5px;
+        color: var(--ink-2);
+      }
+      .rdout li {
+        margin-bottom: 2px;
+      }
+      .rdout .n {
+        font-family: ui-monospace, Menlo, monospace;
+      }
+      .empty {
+        color: var(--mut);
+        font-size: 13px;
+        font-style: italic;
+      }
+      .legend {
+        display: flex;
+        gap: 12px;
+        font-size: 11.5px;
+        color: var(--mut);
+        font-family: ui-monospace, Menlo, monospace;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      .legend i {
+        display: inline-block;
+        width: 14px;
+        height: 2px;
+        vertical-align: middle;
+        margin-right: 4px;
+      }
+      button.rst {
+        font: inherit;
+        font-size: 12.5px;
+        background: #eee9e0;
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+        padding: 3px 9px;
+        cursor: pointer;
+        color: var(--ink-2);
+      }
+      button.rst:hover {
+        background: #e5dfd3;
+      }
+      a.meth-panel {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        justify-content: center;
+        width: 100%;
+        margin-top: 10px;
+        font: inherit;
+        font-size: 12.5px;
+        text-decoration: none;
+        background: var(--ink);
+        color: #f6f3ee;
+        border-radius: 3px;
+        padding: 8px 10px;
+        transition: background 0.15s;
+      }
+      a.meth-panel:hover {
+        background: #16324c;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap" id="wrap">
+      <main style="display: flex; flex-direction: column; min-height: 0">
+        <header>
+          <a
+            class="methodology"
+            href="https://docs.google.com/document/d/1ML1may-Keh3hgm6z2_JaKG5Q9SvyOu6edAzHCtjzF2U/edit?usp=drivesdk"
+            target="_blank"
+            rel="noopener"
+          >
+            <span class="doc">&#9998;</span> Methodology
+          </a>
+          <div class="titleblock">
+            <h1>
+              FRI <span class="v">1.5</span> &nbsp;Parameter Dependency Diagram
+            </h1>
+            <p class="lede">
+              The 7 parameters of the Fintech Readiness Index(FRI) v1.5 and how
+              they move together across 15 cities. Strongly related parameters
+              pull toward the centre; each link shows their correlation, where
+              blue for positive and red for negative correlation.
+            </p>
+          </div>
+        </header>
+        <div class="stage">
+          <button
+            class="panel-toggle"
+            id="panelToggle"
+            title="Show or hide the side panel"
+          >
+            <span class="chev">&rsaquo;</span
+            ><span id="panelToggleLabel">Hide panel</span>
+          </button>
+          <svg id="viz"></svg>
+        </div>
+      </main>
+
+      <aside>
+        <div class="card">
+          <h2>Controls</h2>
+          <div class="ctl">
+            <div class="row">
+              <label for="alpha">Alpha &alpha;</label
+              ><span class="val" id="av">1.00</span>
+            </div>
+            <input
+              type="range"
+              id="alpha"
+              min="0"
+              max="1"
+              step="0.01"
+              value="1"
+            />
+            <div class="hint">0 = full subjective &middot; 1 = full data</div>
+          </div>
+          <div class="ctl">
+            <div class="row">
+              <label for="thr">Strength floor</label
+              ><span class="val" id="tv">0.00</span>
+            </div>
+            <input
+              type="range"
+              id="thr"
+              min="0"
+              max="1"
+              step="0.01"
+              value="0"
+            />
+            <div class="hint">Hides links below this composite score.</div>
+          </div>
+          <button class="rst" id="rst">Clear &amp; reheat</button>
+          <div class="legend">
+            <span><i style="background: var(--pos)"></i>positive r</span>
+            <span><i style="background: var(--neg)"></i>negative r</span>
+          </div>
+          <a
+            class="meth-panel"
+            href="https://docs.google.com/document/d/1ML1may-Keh3hgm6z2_JaKG5Q9SvyOu6edAzHCtjzF2U/edit?usp=drivesdk"
+            target="_blank"
+            rel="noopener"
+          >
+            &#9998;&nbsp; View full methodology
+          </a>
+        </div>
+        <div class="card rdout" id="rd">
+          <h2>Selection</h2>
+          <span class="empty">Click a parameter to trace its links.</span>
+        </div>
+        <div class="card tree" id="tree">
+          <h2>Parameters &amp; indicators</h2>
+        </div>
+      </aside>
+    </div>
+    <div id="tip"></div>
+    <script>
+      const FRI = {
+        params: [
+          "Business Environment",
+          "Human Capital",
+          "Infrastructure",
+          "Financial Sector Development",
+          "Reputation",
+          "Innovation and Startup Ecosystem",
+          "Sustainability",
+        ],
+        edges: [
+          {
+            a: "Business Environment",
+            b: "Human Capital",
+            r: 0.2165,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Business Environment",
+            b: "Infrastructure",
+            r: 0.2073,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Business Environment",
+            b: "Financial Sector Development",
+            r: 0.499,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Business Environment",
+            b: "Reputation",
+            r: 0.2748,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Business Environment",
+            b: "Innovation and Startup Ecosystem",
+            r: 0.7331,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Business Environment",
+            b: "Sustainability",
+            r: 0.235,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Human Capital",
+            b: "Infrastructure",
+            r: 0.8515,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Human Capital",
+            b: "Financial Sector Development",
+            r: 0.5631,
+            w: 0,
+            rank: null,
+          },
+          { a: "Human Capital", b: "Reputation", r: -0.5749, w: 0, rank: null },
+          {
+            a: "Human Capital",
+            b: "Innovation and Startup Ecosystem",
+            r: 0.3458,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Human Capital",
+            b: "Sustainability",
+            r: 0.4815,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Infrastructure",
+            b: "Financial Sector Development",
+            r: 0.426,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Infrastructure",
+            b: "Reputation",
+            r: -0.7169,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Infrastructure",
+            b: "Innovation and Startup Ecosystem",
+            r: 0.3599,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Infrastructure",
+            b: "Sustainability",
+            r: 0.6195,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Financial Sector Development",
+            b: "Reputation",
+            r: -0.1855,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Financial Sector Development",
+            b: "Innovation and Startup Ecosystem",
+            r: 0.4867,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Financial Sector Development",
+            b: "Sustainability",
+            r: 0.3765,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Reputation",
+            b: "Innovation and Startup Ecosystem",
+            r: 0.0561,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Reputation",
+            b: "Sustainability",
+            r: -0.6809,
+            w: 0,
+            rank: null,
+          },
+          {
+            a: "Innovation and Startup Ecosystem",
+            b: "Sustainability",
+            r: 0.4197,
+            w: 0,
+            rank: null,
+          },
+        ],
+        indicators: {
+          "Business Environment": [
+            "Political Stability and Rule of Law",
+            "Ease of Doing Business",
+            "Gross Domestic Product",
+            "Tax and Competition",
+          ],
+          "Human Capital": [
+            "Education and Development",
+            "Quality of Life",
+            "Flexible Labour Market",
+          ],
+          Infrastructure: ["Physical Infrastructure", "Digital Infrastructure"],
+          "Financial Sector Development": [
+            "Depth and Breadth of Industry Clusters",
+            "Availability of Capital",
+            "Financial Literacy",
+            "Average Transaction Value",
+          ],
+          Reputation: ["Media Reputation"],
+          "Innovation and Startup Ecosystem": [
+            "Start Up Density",
+            "Acceleration and Incubation Capacity",
+            "Market Reach",
+            "Investments",
+          ],
+          Sustainability: [
+            "Urban Green Space per Capita",
+            "Carbon Footprint",
+            "Green Bond Issuance",
+          ],
+        },
+      };
+
+      const PC = ["--p0", "--p1", "--p2", "--p3", "--p4", "--p5", "--p6"];
+      const params = FRI.params;
+      const cssv = (n) =>
+        getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+      const pcol = {};
+      params.forEach((p, i) => (pcol[p] = cssv(PC[i % PC.length])));
+
+      // ---- nodes = the 7 parameters
+      const nodes = params.map((p) => ({ id: p }));
+      const byId = new Map(nodes.map((n) => [n.id, n]));
+      const N = nodes.length;
+
+      // ---- composite score (matches workbook; no subjective weight here -> |r|)
+      const score = (e, a) =>
+        e.w !== 0 ? a * Math.abs(e.r) + (1 - a) * e.w : Math.abs(e.r);
+
+      const rawLinks = FRI.edges
+        .filter((e) => byId.has(e.a) && byId.has(e.b))
+        .map((e) => ({ ...e, source: byId.get(e.a), target: byId.get(e.b) }));
+      const adj = new Map(nodes.map((n) => [n.id, []]));
+      rawLinks.forEach((l) => {
+        adj.get(l.a).push(l);
+        adj.get(l.b).push(l);
+      });
+
+      // ================= self-contained 2D force simulation (hub-centred) =================
+      let Wd = 1000,
+        Ht = 760;
+      let Rrim = Math.min(Wd, Ht) * 0.42;
+      let ALPHA = 1.0,
+        THR = 0.0;
+      function activeLinks() {
+        return rawLinks.filter((l) => score(l, ALPHA) >= THR);
+      }
+
+      let maxDeg = 1;
+      function recomputeDegrees() {
+        const a = ALPHA;
+        for (const n of nodes) n.deg = 0;
+        for (const l of rawLinks) {
+          const s = score(l, a);
+          if (s < THR) continue;
+          l.source.deg += s;
+          l.target.deg += s;
+        }
+        maxDeg = Math.max(1, ...nodes.map((n) => n.deg));
+        for (const n of nodes) {
+          n.cen = Math.sqrt(n.deg / maxDeg);
+          n.rTarget = Rrim * (1 - 0.72 * n.cen);
+        }
+      }
+      nodes.forEach((n, i) => {
+        const a = (i / N) * Math.PI * 2;
+        n.x = Wd / 2 + Math.cos(a) * Rrim * 0.6;
+        n.y = Ht / 2 + Math.sin(a) * Rrim * 0.6;
+        n.vx = 0;
+        n.vy = 0;
+      });
+
+      const sim = {
+        heat: 1,
+        min: 0.02,
+        decay: 0.987,
+        step() {
+          const a = ALPHA,
+            links = activeLinks(),
+            cx = Wd / 2,
+            cy = Ht / 2;
+          for (const l of links) {
+            const s = score(l, a);
+            const rest = 320 - 200 * Math.min(1, s);
+            let dx = l.target.x - l.source.x,
+              dy = l.target.y - l.source.y;
+            let d = Math.hypot(dx, dy) || 0.01;
+            const k = ((d - rest) / d) * 0.018 * (0.4 + s) * this.heat;
+            const fx = dx * k,
+              fy = dy * k;
+            if (!l.source.fixed) {
+              l.source.vx += fx;
+              l.source.vy += fy;
+            }
+            if (!l.target.fixed) {
+              l.target.vx -= fx;
+              l.target.vy -= fy;
+            }
+          }
+          for (let i = 0; i < N; i++)
+            for (let j = i + 1; j < N; j++) {
+              const A = nodes[i],
+                B = nodes[j];
+              let dx = B.x - A.x,
+                dy = B.y - A.y,
+                d2 = dx * dx + dy * dy || 0.01;
+              const dd = Math.max(d2, 900);
+              const rep = (130000 / dd) * this.heat;
+              const d = Math.sqrt(d2);
+              const fx = (dx / d) * rep,
+                fy = (dy / d) * rep;
+              if (!A.fixed) {
+                A.vx -= fx;
+                A.vy -= fy;
+              }
+              if (!B.fixed) {
+                B.vx += fx;
+                B.vy += fy;
+              }
+            }
+          for (const n of nodes) {
+            if (n.fixed) continue;
+            let dx = n.x - cx,
+              dy = n.y - cy,
+              r = Math.hypot(dx, dy) || 0.01;
+            const pull = (n.rTarget - r) * 0.045 * this.heat;
+            n.vx += (dx / r) * pull;
+            n.vy += (dy / r) * pull;
+          }
+          for (const n of nodes) {
+            if (n.fixed) {
+              n.vx = n.vy = 0;
+              continue;
+            }
+            n.vx *= 0.84;
+            n.vy *= 0.84;
+            n.x += n.vx;
+            n.y += n.vy;
+            n.x = Math.max(120, Math.min(Wd - 120, n.x));
+            n.y = Math.max(50, Math.min(Ht - 50, n.y));
+          }
+          this.heat = Math.max(this.min, this.heat * this.decay);
+        },
+        reheat(v = 0.9) {
+          this.heat = Math.max(this.heat, v);
+        },
+      };
+      recomputeDegrees();
+
+      // ================= SVG render =================
+      const SVG = "http://www.w3.org/2000/svg";
+      const svg = document.getElementById("viz");
+      const mk = (t, at = {}) => {
+        const el = document.createElementNS(SVG, t);
+        for (const k in at) el.setAttribute(k, at[k]);
+        return el;
+      };
+      function resize() {
+        const r = svg.getBoundingClientRect();
+        if (!r.width) return;
+        Wd = r.width;
+        Ht = r.height;
+        svg.setAttribute("viewBox", `0 0 ${Wd} ${Ht}`);
+        Rrim = Math.min(Wd, Ht) * 0.42;
+        recomputeDegrees();
+      }
+      new ResizeObserver(resize).observe(svg);
+      resize();
+
+      const gLink = mk("g"),
+        gNode = mk("g");
+      svg.append(gLink, gNode);
+
+      const tip = document.getElementById("tip");
+      const showTip = (ev, html) => {
+        tip.innerHTML = html;
+        tip.style.opacity = 1;
+        const x = Math.min(ev.clientX + 14, innerWidth - 330);
+        tip.style.left = x + "px";
+        tip.style.top = Math.max(8, ev.clientY - 14) + "px";
+      };
+      const hideTip = () => (tip.style.opacity = 0);
+
+      const linkEls = rawLinks.map((l) => {
+        const el = mk("line", {
+          class: "link",
+          stroke: l.r >= 0 ? cssv("--pos") : cssv("--neg"),
+        });
+        const hit = mk("line", {
+          stroke: "transparent",
+          "stroke-width": 12,
+          style: "pointer-events:stroke;cursor:crosshair",
+        });
+        hit.addEventListener("mousemove", (ev) => {
+          ev.stopPropagation();
+          const s = score(l, ALPHA);
+          const sub =
+            l.w !== 0
+              ? "S = &alpha;&middot;|r| + (1&minus;&alpha;)&middot;w<br>&nbsp;&nbsp;= " +
+                ALPHA.toFixed(2) +
+                "&middot;" +
+                Math.abs(l.r).toFixed(4) +
+                " + " +
+                (1 - ALPHA).toFixed(2) +
+                "&middot;" +
+                l.w.toFixed(4)
+              : 'S = |r| &nbsp;<span style="opacity:.7">(correlation strength)</span>';
+          showTip(
+            ev,
+            "<b>" +
+              s.toFixed(4) +
+              '</b> &nbsp;composite score<br><span class="k">' +
+              l.a +
+              "<br>&harr; " +
+              l.b +
+              "</span>" +
+              '<span class="k" style="display:block;margin-top:5px">r = <span style="color:' +
+              (l.r >= 0 ? "#7fd6bd" : "#ff9b84") +
+              '">' +
+              l.r.toFixed(4) +
+              "</span><br>" +
+              sub +
+              "</span>",
+          );
+          el.setAttribute("stroke-opacity", 1);
+          el.setAttribute("stroke-width", (0.6 + s * 4.5 + 1.6).toFixed(2));
+        });
+        hit.addEventListener("mouseleave", () => {
+          hideTip();
+          paint();
+        });
+        return { l, el, hit };
+      });
+      linkEls.forEach((o) => {
+        gLink.append(o.el);
+        gLink.append(o.hit);
+      });
+
+      let sel = null;
+      const nodeEls = nodes.map((n) => {
+        const g = mk("g", { class: "node" });
+        const ring = mk("circle", {
+          class: "locked-ring",
+          r: 12,
+          style: "display:none",
+        });
+        const c = mk("circle", {
+          class: "hub",
+          r: 9,
+          fill: pcol[n.id],
+          stroke: "#fffdf9",
+          "stroke-width": 2,
+        });
+        const label = n.id.replace(" and ", " & ");
+        const t = mk("text", { x: 0, y: -16, "text-anchor": "middle" });
+        t.textContent = label;
+        g.append(ring, c, t);
+        gNode.append(g);
+        c.addEventListener("mousemove", (ev) => {
+          ev.stopPropagation();
+          if (drag) return;
+          const deg = adj
+            .get(n.id)
+            .filter((e) => score(e, ALPHA) >= THR).length;
+          const inds = FRI.indicators[n.id] || [];
+          showTip(
+            ev,
+            "<b>" +
+              n.id +
+              '</b><br><span class="k">' +
+              deg +
+              " links &middot; " +
+              inds.length +
+              " indicators<br>" +
+              inds.join(", ") +
+              "</span>",
+          );
+        });
+        c.addEventListener("mouseleave", hideTip);
+        return { n, g, c, t, ring };
+      });
+
+      function paint() {
+        const a = ALPHA;
+        const live = new Set();
+        if (sel) {
+          live.add(sel);
+          adj.get(sel).forEach((l) => {
+            if (score(l, a) >= THR) live.add(l.a === sel ? l.b : l.a);
+          });
+        }
+        linkEls.forEach(({ l, el, hit }) => {
+          const s = score(l, a),
+            vis = s >= THR,
+            touch = sel && (l.a === sel || l.b === sel);
+          if (!vis || (sel && !touch)) {
+            el.style.display = "none";
+            hit.style.display = "none";
+            return;
+          }
+          el.style.display = "";
+          hit.style.display = "";
+          el.setAttribute("x1", l.source.x);
+          el.setAttribute("y1", l.source.y);
+          el.setAttribute("x2", l.target.x);
+          el.setAttribute("y2", l.target.y);
+          hit.setAttribute("x1", l.source.x);
+          hit.setAttribute("y1", l.source.y);
+          hit.setAttribute("x2", l.target.x);
+          hit.setAttribute("y2", l.target.y);
+          el.setAttribute("stroke-width", (0.6 + s * 4.5).toFixed(2));
+          el.setAttribute(
+            "stroke-opacity",
+            sel
+              ? Math.min(1, 0.5 + s * 0.5)
+              : (0.55 * (0.2 + s * 0.8)).toFixed(3),
+          );
+        });
+        nodeEls.forEach(({ n, g, c, t, ring }) => {
+          g.setAttribute("transform", "translate(" + n.x + "," + n.y + ")");
+          const on = !sel || live.has(n.id);
+          const br = 9 + 7 * (n.cen || 0);
+          c.setAttribute("r", n.id === sel ? br + 3 : on ? br : br * 0.7);
+          c.style.opacity = on ? 1 : 0.22;
+          t.style.opacity = on ? 1 : 0.16;
+          c.setAttribute("stroke", n.id === sel ? cssv("--hot") : "#fffdf9");
+          c.setAttribute("stroke-width", n.id === sel ? 2.6 : 2);
+          ring.setAttribute("r", br + 4);
+          ring.style.display = n.fixed ? "" : "none";
+        });
+      }
+
+      function tick() {
+        if (sim.heat > sim.min) {
+          for (let k = 0; k < 2; k++) sim.step();
+        }
+        paint();
+        requestAnimationFrame(tick);
+      }
+      tick();
+
+      // ---- drag to move + lock
+      let drag = null;
+      function ptr(ev) {
+        const r = svg.getBoundingClientRect();
+        const e = ev.touches ? ev.touches[0] : ev;
+        return {
+          x: ((e.clientX - r.left) / r.width) * Wd,
+          y: ((e.clientY - r.top) / r.height) * Ht,
+        };
+      }
+      nodeEls.forEach(({ n, c }) => {
+        const down = (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          drag = { n, moved: false };
+          n.fixed = true;
+          sim.reheat(0.5);
+          hideTip();
+        };
+        c.addEventListener("mousedown", down);
+        c.addEventListener("touchstart", down, { passive: false });
+        c.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          if (!drag || !drag.moved) pick(n.id === sel ? null : n.id);
+        });
+        c.addEventListener("dblclick", (ev) => {
+          ev.stopPropagation();
+          n.fixed = false;
+          sim.reheat(0.7);
+        });
+      });
+      window.addEventListener("mousemove", (ev) => {
+        if (!drag) return;
+        drag.moved = true;
+        const p = ptr(ev);
+        drag.n.x = p.x;
+        drag.n.y = p.y;
+        drag.n.vx = drag.n.vy = 0;
+      });
+      window.addEventListener(
+        "touchmove",
+        (ev) => {
+          if (!drag) return;
+          drag.moved = true;
+          const p = ptr(ev);
+          drag.n.x = p.x;
+          drag.n.y = p.y;
+        },
+        { passive: false },
+      );
+      const up = () => {
+        if (drag) {
+          const d = drag;
+          setTimeout(() => {
+            if (drag === d) drag = null;
+          }, 0);
+        }
+      };
+      window.addEventListener("mouseup", up);
+      window.addEventListener("touchend", up);
+      svg.addEventListener("click", (ev) => {
+        if (ev.target === svg || ev.target === gLink || ev.target === gNode)
+          pick(null);
+      });
+
+      // ---- selection readout
+      function pick(id) {
+        sel = id;
+        paint();
+        readout();
+        document
+          .querySelectorAll(".prm")
+          .forEach((el) => el.classList.toggle("on", el.dataset.id === sel));
+      }
+      function readout() {
+        const rd = document.getElementById("rd");
+        if (!sel) {
+          rd.innerHTML =
+            '<h2>Selection</h2><span class="empty">Click a parameter to trace its links.</span>';
+          return;
+        }
+        const rows = adj
+          .get(sel)
+          .map((l) => ({
+            o: l.a === sel ? l.b : l.a,
+            s: score(l, ALPHA),
+            r: l.r,
+          }))
+          .filter((x) => x.s >= THR)
+          .sort((x, y) => y.s - x.s);
+        rd.innerHTML =
+          '<h2>Selection</h2><span class="big">' +
+          sel +
+          "</span>" +
+          '<div style="margin-top:6px;font-size:12px;color:var(--ink-2)">' +
+          rows.length +
+          " link" +
+          (rows.length === 1 ? "" : "s") +
+          " at &alpha;=" +
+          ALPHA.toFixed(2) +
+          ", floor " +
+          THR.toFixed(2) +
+          "</div>" +
+          (rows.length
+            ? "<ol>" +
+              rows
+                .map(
+                  (x) =>
+                    "<li>" +
+                    x.o.replace(" and ", " & ") +
+                    ' <span class="n" style="color:' +
+                    (x.r >= 0 ? "var(--pos)" : "var(--neg)") +
+                    '">' +
+                    (x.r >= 0 ? "+" : "") +
+                    x.r.toFixed(3) +
+                    "</span></li>",
+                )
+                .join("") +
+              "</ol>"
+            : "");
+      }
+
+      // ---- tree (parameter -> its indicators)
+      const tree = document.getElementById("tree");
+      tree.innerHTML =
+        "<h2>Parameters &amp; indicators</h2>" +
+        params
+          .map((p) => {
+            const inds = FRI.indicators[p] || [];
+            return (
+              '<div class="prm" data-id="' +
+              p +
+              '"><div class="nm"><span class="dot" style="background:' +
+              pcol[p] +
+              '"></span>' +
+              p +
+              "</div>" +
+              '<div class="ind">' +
+              inds.join(" &middot; ") +
+              "</div></div>"
+            );
+          })
+          .join("");
+      tree.querySelectorAll(".prm").forEach((el) => {
+        el.querySelector(".nm").addEventListener("click", () =>
+          pick(el.dataset.id === sel ? null : el.dataset.id),
+        );
+      });
+
+      // ---- controls
+      const av = document.getElementById("av"),
+        tv = document.getElementById("tv");
+      document.getElementById("alpha").addEventListener("input", (e) => {
+        ALPHA = +e.target.value;
+        av.textContent = ALPHA.toFixed(2);
+        recomputeDegrees();
+        sim.reheat(0.5);
+        readout();
+      });
+      document.getElementById("thr").addEventListener("input", (e) => {
+        THR = +e.target.value;
+        tv.textContent = THR.toFixed(2);
+        recomputeDegrees();
+        sim.reheat(0.5);
+        readout();
+      });
+      document.getElementById("rst").addEventListener("click", () => {
+        sel = null;
+        nodes.forEach((n) => {
+          n.fixed = false;
+        });
+        document
+          .querySelectorAll(".prm")
+          .forEach((el) => el.classList.remove("on"));
+        recomputeDegrees();
+        sim.reheat(1);
+        readout();
+      });
+
+      // collapse / expand the side panel
+      const wrap = document.getElementById("wrap");
+      const panelLabel = document.getElementById("panelToggleLabel");
+      document.getElementById("panelToggle").addEventListener("click", () => {
+        const collapsed = wrap.classList.toggle("collapsed");
+        panelLabel.textContent = collapsed ? "Show panel" : "Hide panel";
+        sim.reheat(0.5);
+        const t0 = performance.now();
+        const nudge = () => {
+          resize();
+          if (performance.now() - t0 < 360) requestAnimationFrame(nudge);
+        };
+        requestAnimationFrame(nudge);
+      });
+
+      readout();
+    </script>
+  </body>
+</html>
