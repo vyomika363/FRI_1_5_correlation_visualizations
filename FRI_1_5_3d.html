@@ -8,7 +8,7 @@
   :root{
     --ink:#0d1b2a; --ink-2:#37506b; --mut:#7f95ad;
     --paper:#f2efe9; --panel:#fffdf9; --rule:#d9d2c6;
-    --pos:#1f6f6b; --neg:#b4442e; --hot:#e0a500;
+    --pos:#4a9d94; --neg:#e39b8f; --hot:#e0a500;
     --p0:#2f6d80; --p1:#7a5a9e; --p2:#39795a; --p3:#b06a2c;
     --p4:#9c3f5d; --p5:#3f5aa8; --p6:#6b7a2f;
   }
@@ -297,7 +297,7 @@ const showTip=(ev,html)=>{tip.innerHTML=html;tip.style.opacity=1;
 const hideTip=()=>tip.style.opacity=0;
 
 const linkEls=rawLinks.map(l=>{
-  const el=mk('line',{class:'link',stroke:l.r>=0?cssv('--pos'):cssv('--neg')});
+  const el=mk('line',{class:'link',stroke:l.r>=0?cssv('--pos'):cssv('--neg'),'stroke-width':2});
   const hit=mk('line',{stroke:'transparent','stroke-width':9,style:'pointer-events:stroke;cursor:crosshair'});
   hit.addEventListener('mousemove',ev=>{ev.stopPropagation();
     const s=score(l,ALPHA);
@@ -306,7 +306,7 @@ const linkEls=rawLinks.map(l=>{
       : 'S = |r| &nbsp;<span style="opacity:.7">(no subjective weight &mdash; &alpha; inactive)</span>';
     showTip(ev,'<b>'+s.toFixed(4)+'</b> &nbsp;composite score<br><span class="k">'+disp(l.a)+'<br>&harr; '+disp(l.b)+'</span>'
       +'<span class="k" style="display:block;margin-top:5px">r = <span style="color:'+(l.r>=0?'#7fd6bd':'#ff9b84')+'">'+l.r.toFixed(4)+'</span> &middot; w = '+l.w.toFixed(4)+(l.rank?' &middot; rank '+l.rank:'')+'<br>'+sub+'</span>');
-    el.setAttribute('stroke-opacity',1);el.setAttribute('stroke-width',(0.4+s*2.9+1.4).toFixed(2));});
+    el.setAttribute('stroke-opacity',1);el.setAttribute('stroke-width',2);});
   hit.addEventListener('mouseleave',()=>{hideTip();paint();});
   return {l,el,hit};
 });
@@ -339,8 +339,8 @@ function paint(){
     el.setAttribute('x2',l.target.x);el.setAttribute('y2',l.target.y);
     hit.setAttribute('x1',l.source.x);hit.setAttribute('y1',l.source.y);
     hit.setAttribute('x2',l.target.x);hit.setAttribute('y2',l.target.y);
-    el.setAttribute('stroke-width',(0.4+s*2.9).toFixed(2));
-    el.setAttribute('stroke-opacity',sel?Math.min(1,.5+s*.5):(0.5*(0.2+s*0.8)).toFixed(3));
+    el.setAttribute('stroke-width',2);
+    el.setAttribute('stroke-opacity',0.85);
   });
   nodeEls.forEach(({n,g,c,t,ring})=>{
     g.setAttribute('transform','translate('+n.x+','+n.y+')');
