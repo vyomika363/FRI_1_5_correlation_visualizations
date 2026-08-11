@@ -12,8 +12,8 @@
         --paper: #f2efe9;
         --panel: #fffdf9;
         --rule: #d9d2c6;
-        --pos: #1f6f6b;
-        --neg: #b4442e;
+        --pos: #4a9d94;
+        --neg: #e39b8f;
         --hot: #e0a500;
         --p0: #2f6d80;
         --p1: #7a5a9e;
@@ -904,6 +904,7 @@
         const el = mk("line", {
           class: "link",
           stroke: l.r >= 0 ? cssv("--pos") : cssv("--neg"),
+          "stroke-width": 2,
         });
         const hit = mk("line", {
           stroke: "transparent",
@@ -942,7 +943,7 @@
               "</span>",
           );
           el.setAttribute("stroke-opacity", 1);
-          el.setAttribute("stroke-width", (0.6 + s * 4.5 + 1.6).toFixed(2));
+          el.setAttribute("stroke-width", 2);
         });
         hit.addEventListener("mouseleave", () => {
           hideTip();
@@ -1027,13 +1028,8 @@
           hit.setAttribute("y1", l.source.y);
           hit.setAttribute("x2", l.target.x);
           hit.setAttribute("y2", l.target.y);
-          el.setAttribute("stroke-width", (0.6 + s * 4.5).toFixed(2));
-          el.setAttribute(
-            "stroke-opacity",
-            sel
-              ? Math.min(1, 0.5 + s * 0.5)
-              : (0.55 * (0.2 + s * 0.8)).toFixed(3),
-          );
+          el.setAttribute("stroke-width", 2);
+          el.setAttribute("stroke-opacity", 0.85);
         });
         nodeEls.forEach(({ n, g, c, t, ring }) => {
           g.setAttribute("transform", "translate(" + n.x + "," + n.y + ")");
